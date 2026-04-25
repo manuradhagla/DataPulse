@@ -552,10 +552,55 @@ function DatasetView({
                 Trend · {metricCol}
               </h3>
               <span className="font-mono text-xs text-muted-foreground">
-                last {trendValues.length}
+                {trendType === "radar"
+                  ? `top ${groupedSums.length} groups`
+                  : `last ${trendValues.length}`}
               </span>
             </div>
-            <LineTrend labels={trendLabels} values={trendValues} label={metricCol} />
+            {trendType === "line" && (
+              <LineTrend labels={trendLabels} values={trendValues} label={metricCol} />
+            )}
+            {trendType === "area" && (
+              <AreaTrend labels={trendLabels} values={trendValues} label={metricCol} />
+            )}
+            {trendType === "radar" &&
+              (groupedSums.length >= 3 ? (
+                <RadarChart
+                  labels={groupedSums.map((g) => g.label)}
+                  values={groupedSums.map((g) => g.total)}
+                  metricLabel={`${metricCol} by ${groupCol}`}
+                />
+              ) : (
+                <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
+                  Need at least 3 groups for a radar chart.
+                </div>
+              ))}
+          </div>
+        )}
+
+        {/* Scatter: correlation between two numeric columns */}
+        {scatterPoints.length > 1 && (
+          <div className="rounded-2xl border border-border bg-gradient-card p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-base font-semibold">Correlation</h3>
+              <span className="font-mono text-xs text-muted-foreground">
+                {scatterPoints.length} points
+              </span>
+            </div>
+            <ScatterPlot points={scatterPoints} xLabel={scatterCol} yLabel={metricCol} />
+          </div>
+        )}
+
+        {/* Stacked bar of summed metric per top group */}
+        {metricCol && groupedSums.length > 0 && (
+          <div className="rounded-2xl border border-border bg-gradient-card p-5">
+            <h3 className="mb-4 font-display text-base font-semibold">
+              {metricCol} sum by {groupCol}
+            </h3>
+            <StackedBars
+              labels={groupedSums.map((g) => g.label)}
+              datasets={[{ label: metricCol, values: groupedSums.map((g) => g.total) }]}
+            />
           </div>
         )}
 
@@ -572,13 +617,34 @@ function DatasetView({
               />
             </div>
             <div className="rounded-2xl border border-border bg-gradient-card p-5">
-              <h3 className="mb-4 font-display text-base font-semibold">
-                Share of {groupCol}
-              </h3>
-              <DoughnutBreakdown
-                labels={groups.map((g) => g.label)}
-                values={groups.map((g) => g.count)}
-              />
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-display text-base font-semibold">
+                  Share of {groupCol}
+                </h3>
+                <Select
+                  value={shareType}
+                  onValueChange={(v) => setShareType(v as typeof shareType)}
+                >
+                  <SelectTrigger className="h-7 w-28 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="doughnut">Doughnut</SelectItem>
+                    <SelectItem value="pie">Pie</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {shareType === "doughnut" ? (
+                <DoughnutBreakdown
+                  labels={groups.map((g) => g.label)}
+                  values={groups.map((g) => g.count)}
+                />
+              ) : (
+                <PieBreakdown
+                  labels={groups.map((g) => g.label)}
+                  values={groups.map((g) => g.count)}
+                />
+              )}
             </div>
           </>
         )}
