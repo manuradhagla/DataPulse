@@ -31,9 +31,14 @@ import {
 import { Navbar } from "@/components/Navbar";
 import { DatasetUploader } from "@/components/DatasetUploader";
 import {
+  AreaTrend,
   BarBreakdown,
   DoughnutBreakdown,
   LineTrend,
+  PieBreakdown,
+  RadarChart,
+  ScatterPlot,
+  StackedBars,
 } from "@/components/charts/AnalyticsCharts";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,6 +73,7 @@ type DatasetRow = {
   rows: Row[];
   row_count: number;
   created_at: string;
+  storage_path: string | null;
 };
 
 function Dashboard() {
@@ -91,7 +97,7 @@ function Dashboard() {
     setFetching(true);
     const { data, error } = await supabase
       .from("datasets")
-      .select("id, name, file_type, columns, rows, row_count, created_at")
+      .select("id, name, file_type, columns, rows, row_count, created_at, storage_path")
       .order("created_at", { ascending: false });
     if (error) {
       toast.error(error.message);
@@ -114,6 +120,11 @@ function Dashboard() {
   }, [user]);
 
   const handleDelete = async (id: string) => {
+    // Clean up the backed-up original file too (best-effort).
+    const target = datasets.find((d) => d.id === id);
+    if (target?.storage_path) {
+      await supabase.storage.from("dataset-files").remove([target.storage_path]);
+    }
     const { error } = await supabase.from("datasets").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
@@ -288,10 +299,16 @@ function DatasetView({
   const [groupCol, setGroupCol] = useState<string>(
     categoricalCols[0] ?? dataset.columns[0] ?? "",
   );
+  // Variant pickers for the new chart types.
+  const [trendType, setTrendType] = useState<"line" | "area" | "radar">("line");
+  const [shareType, setShareType] = useState<"doughnut" | "pie">("doughnut");
+  // Optional second numeric column to enable scatter (correlation) view.
+  const [scatterCol, setScatterCol] = useState<string>("__none");
 
   useEffect(() => {
     setMetricCol(numericCols[0] ?? "");
     setGroupCol(categoricalCols[0] ?? dataset.columns[0] ?? "");
+    setScatterCol("__none");
   }, [dataset.id, numericCols, categoricalCols, dataset.columns]);
 
   const numbers = useMemo(
@@ -316,6 +333,37 @@ function DatasetView({
     [dataset.rows, groupCol],
   );
 
+  // Sum of `metricCol` per top group → stacked bar / per-group magnitude.
+  const groupedSums = useMemo(() => {
+    if (!metricCol || !groupCol) return [] as { label: string; total: number }[];
+    const sums = new Map<string, number>();
+    for (const row of dataset.rows) {
+      const key = row[groupCol];
+      if (key === null || key === undefined || key === "") continue;
+      const raw = row[metricCol];
+      const n = typeof raw === "number" ? raw : Number(raw);
+      if (!Number.isFinite(n)) continue;
+      const k = String(key);
+      sums.set(k, (sums.get(k) ?? 0) + n);
+    }
+    return [...sums.entries()]
+      .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+      .slice(0, 8)
+      .map(([label, total]) => ({ label, total }));
+  }, [dataset.rows, metricCol, groupCol]);
+
+  // Scatter points: pair the two chosen numeric columns row-by-row.
+  const scatterPoints = useMemo(() => {
+    if (!metricCol || scatterCol === "__none" || scatterCol === metricCol) return [];
+    const pts: { x: number; y: number }[] = [];
+    for (const r of dataset.rows) {
+      const x = Number(r[scatterCol]);
+      const y = Number(r[metricCol]);
+      if (Number.isFinite(x) && Number.isFinite(y)) pts.push({ x, y });
+    }
+    return pts.slice(0, 1000); // cap for perf
+  }, [dataset.rows, metricCol, scatterCol]);
+
   const trendLabels = useMemo(
     () => numbers.map((_, i) => `${i + 1}`).slice(-50),
     [numbers],
@@ -332,6 +380,7 @@ function DatasetView({
       group_column: groupCol,
       analytics: stats,
       breakdown: groups,
+      grouped_sums: groupedSums,
     };
     const blob = new Blob([JSON.stringify(report, null, 2)], {
       type: "application/json",
@@ -345,6 +394,27 @@ function DatasetView({
     toast.success("Report exported");
   };
 
+  // Download the original uploaded file via short-lived signed URL (private bucket).
+  const handleDownloadOriginal = async () => {
+    if (!dataset.storage_path) {
+      toast.error("Original file unavailable for this dataset");
+      return;
+    }
+    const { data, error } = await supabase.storage
+      .from("dataset-files")
+      .createSignedUrl(dataset.storage_path, 60);
+    if (error || !data?.signedUrl) {
+      toast.error(error?.message ?? "Could not get download link");
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = data.signedUrl;
+    a.download = `${dataset.name}.${dataset.file_type}`;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.click();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 rounded-2xl border border-border bg-gradient-card p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -355,7 +425,12 @@ function DatasetView({
             {dataset.file_type.toUpperCase()}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {dataset.storage_path && (
+            <Button variant="outline" size="sm" onClick={handleDownloadOriginal}>
+              <Download className="mr-1.5 h-4 w-4" /> Original file
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="mr-1.5 h-4 w-4" /> Export report
           </Button>
@@ -389,7 +464,7 @@ function DatasetView({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1.5 lg:col-span-1">
+        <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">
             Group by column
           </Label>
@@ -403,6 +478,41 @@ function DatasetView({
                   {c}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Trend chart style
+          </Label>
+          <Select value={trendType} onValueChange={(v) => setTrendType(v as typeof trendType)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="line">Line</SelectItem>
+              <SelectItem value="area">Area</SelectItem>
+              <SelectItem value="radar">Radar (top groups)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Compare with (scatter)
+          </Label>
+          <Select value={scatterCol} onValueChange={setScatterCol}>
+            <SelectTrigger>
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">None</SelectItem>
+              {numericCols
+                .filter((c) => c !== metricCol)
+                .map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
@@ -442,10 +552,55 @@ function DatasetView({
                 Trend · {metricCol}
               </h3>
               <span className="font-mono text-xs text-muted-foreground">
-                last {trendValues.length}
+                {trendType === "radar"
+                  ? `top ${groupedSums.length} groups`
+                  : `last ${trendValues.length}`}
               </span>
             </div>
-            <LineTrend labels={trendLabels} values={trendValues} label={metricCol} />
+            {trendType === "line" && (
+              <LineTrend labels={trendLabels} values={trendValues} label={metricCol} />
+            )}
+            {trendType === "area" && (
+              <AreaTrend labels={trendLabels} values={trendValues} label={metricCol} />
+            )}
+            {trendType === "radar" &&
+              (groupedSums.length >= 3 ? (
+                <RadarChart
+                  labels={groupedSums.map((g) => g.label)}
+                  values={groupedSums.map((g) => g.total)}
+                  metricLabel={`${metricCol} by ${groupCol}`}
+                />
+              ) : (
+                <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
+                  Need at least 3 groups for a radar chart.
+                </div>
+              ))}
+          </div>
+        )}
+
+        {/* Scatter: correlation between two numeric columns */}
+        {scatterPoints.length > 1 && (
+          <div className="rounded-2xl border border-border bg-gradient-card p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-base font-semibold">Correlation</h3>
+              <span className="font-mono text-xs text-muted-foreground">
+                {scatterPoints.length} points
+              </span>
+            </div>
+            <ScatterPlot points={scatterPoints} xLabel={scatterCol} yLabel={metricCol} />
+          </div>
+        )}
+
+        {/* Stacked bar of summed metric per top group */}
+        {metricCol && groupedSums.length > 0 && (
+          <div className="rounded-2xl border border-border bg-gradient-card p-5">
+            <h3 className="mb-4 font-display text-base font-semibold">
+              {metricCol} sum by {groupCol}
+            </h3>
+            <StackedBars
+              labels={groupedSums.map((g) => g.label)}
+              datasets={[{ label: metricCol, values: groupedSums.map((g) => g.total) }]}
+            />
           </div>
         )}
 
@@ -462,13 +617,34 @@ function DatasetView({
               />
             </div>
             <div className="rounded-2xl border border-border bg-gradient-card p-5">
-              <h3 className="mb-4 font-display text-base font-semibold">
-                Share of {groupCol}
-              </h3>
-              <DoughnutBreakdown
-                labels={groups.map((g) => g.label)}
-                values={groups.map((g) => g.count)}
-              />
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-display text-base font-semibold">
+                  Share of {groupCol}
+                </h3>
+                <Select
+                  value={shareType}
+                  onValueChange={(v) => setShareType(v as typeof shareType)}
+                >
+                  <SelectTrigger className="h-7 w-28 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="doughnut">Doughnut</SelectItem>
+                    <SelectItem value="pie">Pie</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {shareType === "doughnut" ? (
+                <DoughnutBreakdown
+                  labels={groups.map((g) => g.label)}
+                  values={groups.map((g) => g.count)}
+                />
+              ) : (
+                <PieBreakdown
+                  labels={groups.map((g) => g.label)}
+                  values={groups.map((g) => g.count)}
+                />
+              )}
             </div>
           </>
         )}

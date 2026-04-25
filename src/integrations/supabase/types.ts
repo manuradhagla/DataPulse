@@ -23,6 +23,7 @@ export type Database = {
           name: string
           row_count: number
           rows: Json
+          storage_path: string | null
           updated_at: string
           user_id: string
         }
@@ -34,6 +35,7 @@ export type Database = {
           name: string
           row_count?: number
           rows?: Json
+          storage_path?: string | null
           updated_at?: string
           user_id: string
         }
@@ -45,6 +47,7 @@ export type Database = {
           name?: string
           row_count?: number
           rows?: Json
+          storage_path?: string | null
           updated_at?: string
           user_id?: string
         }

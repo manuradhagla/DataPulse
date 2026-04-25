@@ -1,10 +1,12 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Activity, LogOut } from "lucide-react";
+import { Activity, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, signOut } from "@/lib/auth";
+import { useIsAdmin } from "@/lib/useRole";
 
 export function Navbar() {
   const { user, loading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -58,6 +60,13 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           {loading ? null : user ? (
             <>
+              {isAdmin && (
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/admin">
+                    <Shield className="mr-1.5 h-4 w-4" /> Admin
+                  </Link>
+                </Button>
+              )}
               <Button asChild variant="ghost" size="sm">
                 <Link to="/dashboard">Dashboard</Link>
               </Button>
