@@ -425,7 +425,12 @@ function DatasetView({
             {dataset.file_type.toUpperCase()}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {dataset.storage_path && (
+            <Button variant="outline" size="sm" onClick={handleDownloadOriginal}>
+              <Download className="mr-1.5 h-4 w-4" /> Original file
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="mr-1.5 h-4 w-4" /> Export report
           </Button>
