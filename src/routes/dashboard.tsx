@@ -464,7 +464,7 @@ function DatasetView({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1.5 lg:col-span-1">
+        <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">
             Group by column
           </Label>
@@ -478,6 +478,41 @@ function DatasetView({
                   {c}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Trend chart style
+          </Label>
+          <Select value={trendType} onValueChange={(v) => setTrendType(v as typeof trendType)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="line">Line</SelectItem>
+              <SelectItem value="area">Area</SelectItem>
+              <SelectItem value="radar">Radar (top groups)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Compare with (scatter)
+          </Label>
+          <Select value={scatterCol} onValueChange={setScatterCol}>
+            <SelectTrigger>
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">None</SelectItem>
+              {numericCols
+                .filter((c) => c !== metricCol)
+                .map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
