@@ -31,9 +31,14 @@ import {
 import { Navbar } from "@/components/Navbar";
 import { DatasetUploader } from "@/components/DatasetUploader";
 import {
+  AreaTrend,
   BarBreakdown,
   DoughnutBreakdown,
   LineTrend,
+  PieBreakdown,
+  RadarChart,
+  ScatterPlot,
+  StackedBars,
 } from "@/components/charts/AnalyticsCharts";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,6 +73,7 @@ type DatasetRow = {
   rows: Row[];
   row_count: number;
   created_at: string;
+  storage_path: string | null;
 };
 
 function Dashboard() {
@@ -91,7 +97,7 @@ function Dashboard() {
     setFetching(true);
     const { data, error } = await supabase
       .from("datasets")
-      .select("id, name, file_type, columns, rows, row_count, created_at")
+      .select("id, name, file_type, columns, rows, row_count, created_at, storage_path")
       .order("created_at", { ascending: false });
     if (error) {
       toast.error(error.message);
