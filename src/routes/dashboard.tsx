@@ -120,6 +120,11 @@ function Dashboard() {
   }, [user]);
 
   const handleDelete = async (id: string) => {
+    // Clean up the backed-up original file too (best-effort).
+    const target = datasets.find((d) => d.id === id);
+    if (target?.storage_path) {
+      await supabase.storage.from("dataset-files").remove([target.storage_path]);
+    }
     const { error } = await supabase.from("datasets").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
