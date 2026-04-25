@@ -177,10 +177,20 @@ export function StackedBars({
   datasets: { label: string; values: number[] }[];
 }) {
   const stackedOpts: ChartOptions<"bar"> = {
-    ...(baseOptions as ChartOptions<"bar">),
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: baseOptions.plugins,
     scales: {
-      x: { ...baseOptions.scales!.x, stacked: true },
-      y: { ...baseOptions.scales!.y, stacked: true },
+      x: {
+        stacked: true,
+        ticks: { color: "oklch(0.68 0.025 260)" },
+        grid: { color: "oklch(0.30 0.025 270 / 0.3)" },
+      },
+      y: {
+        stacked: true,
+        ticks: { color: "oklch(0.68 0.025 260)" },
+        grid: { color: "oklch(0.30 0.025 270 / 0.3)" },
+      },
     },
   };
   return (
@@ -255,10 +265,22 @@ export function ScatterPlot({
   yLabel: string;
 }) {
   const opts: ChartOptions<"scatter"> = {
-    ...(baseOptions as ChartOptions<"scatter">),
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: baseOptions.plugins,
     scales: {
-      x: { ...baseOptions.scales!.x, title: { display: true, text: xLabel, color: "oklch(0.68 0.025 260)" } },
-      y: { ...baseOptions.scales!.y, title: { display: true, text: yLabel, color: "oklch(0.68 0.025 260)" } },
+      x: {
+        type: "linear",
+        title: { display: true, text: xLabel, color: "oklch(0.68 0.025 260)" },
+        ticks: { color: "oklch(0.68 0.025 260)" },
+        grid: { color: "oklch(0.30 0.025 270 / 0.3)" },
+      },
+      y: {
+        type: "linear",
+        title: { display: true, text: yLabel, color: "oklch(0.68 0.025 260)" },
+        ticks: { color: "oklch(0.68 0.025 260)" },
+        grid: { color: "oklch(0.30 0.025 270 / 0.3)" },
+      },
     },
   };
   return (
