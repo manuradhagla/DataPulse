@@ -65,9 +65,22 @@ export function DatasetUploader({ userId, onSaved, onCancel }: Props) {
   };
 
   const handleSave = async () => {
-    if (!parsed || !name.trim()) return;
+    if (!parsed || !name.trim() || !file) return;
     setSaving(true);
     try {
+      // 1) Back up the original file to private storage so users can re-download it.
+      // Path is scoped under {user_id}/ so RLS lets only the owner (and admins) access it.
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+      const storagePath = `${userId}/${crypto.randomUUID()}-${safeName}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("dataset-files")
+        .upload(storagePath, file, {
+          contentType: file.type || (parsed.fileType === "json" ? "application/json" : "text/csv"),
+          upsert: false,
+        });
+      if (uploadErr) throw uploadErr;
+
+      // 2) Save the parsed dataset row + storage pointer.
       const { error } = await supabase.from("datasets").insert([
         {
           user_id: userId,
@@ -76,9 +89,14 @@ export function DatasetUploader({ userId, onSaved, onCancel }: Props) {
           columns: parsed.columns,
           rows: parsed.rows as unknown as never,
           row_count: parsed.rows.length,
+          storage_path: storagePath,
         },
       ]);
-      if (error) throw error;
+      if (error) {
+        // Roll back the orphaned file if the DB insert fails.
+        await supabase.storage.from("dataset-files").remove([storagePath]);
+        throw error;
+      }
       toast.success("Dataset saved");
       onSaved();
     } catch (err) {
