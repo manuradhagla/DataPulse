@@ -299,10 +299,16 @@ function DatasetView({
   const [groupCol, setGroupCol] = useState<string>(
     categoricalCols[0] ?? dataset.columns[0] ?? "",
   );
+  // Variant pickers for the new chart types.
+  const [trendType, setTrendType] = useState<"line" | "area" | "radar">("line");
+  const [shareType, setShareType] = useState<"doughnut" | "pie">("doughnut");
+  // Optional second numeric column to enable scatter (correlation) view.
+  const [scatterCol, setScatterCol] = useState<string>("__none");
 
   useEffect(() => {
     setMetricCol(numericCols[0] ?? "");
     setGroupCol(categoricalCols[0] ?? dataset.columns[0] ?? "");
+    setScatterCol("__none");
   }, [dataset.id, numericCols, categoricalCols, dataset.columns]);
 
   const numbers = useMemo(
@@ -327,6 +333,37 @@ function DatasetView({
     [dataset.rows, groupCol],
   );
 
+  // Sum of `metricCol` per top group → stacked bar / per-group magnitude.
+  const groupedSums = useMemo(() => {
+    if (!metricCol || !groupCol) return [] as { label: string; total: number }[];
+    const sums = new Map<string, number>();
+    for (const row of dataset.rows) {
+      const key = row[groupCol];
+      if (key === null || key === undefined || key === "") continue;
+      const raw = row[metricCol];
+      const n = typeof raw === "number" ? raw : Number(raw);
+      if (!Number.isFinite(n)) continue;
+      const k = String(key);
+      sums.set(k, (sums.get(k) ?? 0) + n);
+    }
+    return [...sums.entries()]
+      .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+      .slice(0, 8)
+      .map(([label, total]) => ({ label, total }));
+  }, [dataset.rows, metricCol, groupCol]);
+
+  // Scatter points: pair the two chosen numeric columns row-by-row.
+  const scatterPoints = useMemo(() => {
+    if (!metricCol || scatterCol === "__none" || scatterCol === metricCol) return [];
+    const pts: { x: number; y: number }[] = [];
+    for (const r of dataset.rows) {
+      const x = Number(r[scatterCol]);
+      const y = Number(r[metricCol]);
+      if (Number.isFinite(x) && Number.isFinite(y)) pts.push({ x, y });
+    }
+    return pts.slice(0, 1000); // cap for perf
+  }, [dataset.rows, metricCol, scatterCol]);
+
   const trendLabels = useMemo(
     () => numbers.map((_, i) => `${i + 1}`).slice(-50),
     [numbers],
@@ -343,6 +380,7 @@ function DatasetView({
       group_column: groupCol,
       analytics: stats,
       breakdown: groups,
+      grouped_sums: groupedSums,
     };
     const blob = new Blob([JSON.stringify(report, null, 2)], {
       type: "application/json",
@@ -354,6 +392,27 @@ function DatasetView({
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Report exported");
+  };
+
+  // Download the original uploaded file via short-lived signed URL (private bucket).
+  const handleDownloadOriginal = async () => {
+    if (!dataset.storage_path) {
+      toast.error("Original file unavailable for this dataset");
+      return;
+    }
+    const { data, error } = await supabase.storage
+      .from("dataset-files")
+      .createSignedUrl(dataset.storage_path, 60);
+    if (error || !data?.signedUrl) {
+      toast.error(error?.message ?? "Could not get download link");
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = data.signedUrl;
+    a.download = `${dataset.name}.${dataset.file_type}`;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.click();
   };
 
   return (
