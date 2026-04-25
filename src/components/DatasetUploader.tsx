@@ -68,14 +68,16 @@ export function DatasetUploader({ userId, onSaved, onCancel }: Props) {
     if (!parsed || !name.trim()) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("datasets").insert({
-        user_id: userId,
-        name: name.trim(),
-        file_type: parsed.fileType,
-        columns: parsed.columns,
-        rows: parsed.rows,
-        row_count: parsed.rows.length,
-      });
+      const { error } = await supabase.from("datasets").insert([
+        {
+          user_id: userId,
+          name: name.trim(),
+          file_type: parsed.fileType,
+          columns: parsed.columns,
+          rows: parsed.rows as unknown as never,
+          row_count: parsed.rows.length,
+        },
+      ]);
       if (error) throw error;
       toast.success("Dataset saved");
       onSaved();
