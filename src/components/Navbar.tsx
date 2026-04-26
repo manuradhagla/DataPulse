@@ -48,13 +48,6 @@ export function Navbar() {
           >
             About
           </Link>
-          <Link
-            to="/"
-            hash="contact"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Contact
-          </Link>
         </nav>
 
         <div className="flex items-center gap-2">
