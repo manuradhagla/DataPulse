@@ -326,9 +326,11 @@ function DatasetView({
   const [toDate, setToDate] = useState<string>("");
   // Variant pickers for the new chart types.
   const [trendType, setTrendType] = useState<"line" | "area" | "radar">("line");
-  const [shareType, setShareType] = useState<"doughnut" | "pie">("doughnut");
+  const [shareType, setShareType] = useState<"doughnut" | "pie" | "polar">("doughnut");
   // Optional second numeric column to enable scatter (correlation) view.
   const [scatterCol, setScatterCol] = useState<string>("__none");
+  // Optional third numeric column for bubble chart sizing.
+  const [bubbleSizeCol, setBubbleSizeCol] = useState<string>("__none");
 
   useEffect(() => {
     setMetricCol(numericCols[0] ?? "");
@@ -337,6 +339,7 @@ function DatasetView({
     setFromDate("");
     setToDate("");
     setScatterCol("__none");
+    setBubbleSizeCol("__none");
   }, [dataset.id, numericCols, categoricalCols, dateCols, dataset.columns]);
 
   // Apply date-range filter (if a date column is chosen) before computing KPIs.
