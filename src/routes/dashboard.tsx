@@ -360,6 +360,28 @@ function DatasetView({
     [filteredRows, metricCol],
   );
 
+  // For the trend chart: if a date column is active, sort rows chronologically
+  // so the line reflects real time order rather than upload/insert order.
+  const trendSeries = useMemo(() => {
+    if (!metricCol) return { labels: [] as string[], values: [] as number[] };
+    if (dateCol !== "__none") {
+      const pairs: { t: number; label: string; v: number }[] = [];
+      for (const r of filteredRows) {
+        const d = rowDate(r, dateCol);
+        if (!d) continue;
+        const raw = r[metricCol];
+        const n = typeof raw === "number" ? raw : Number(raw);
+        if (!Number.isFinite(n)) continue;
+        pairs.push({ t: d.getTime(), label: d.toISOString().slice(0, 10), v: n });
+      }
+      pairs.sort((a, b) => a.t - b.t);
+      const last = pairs.slice(-50);
+      return { labels: last.map((p) => p.label), values: last.map((p) => p.v) };
+    }
+    const vals = numbers.slice(-50);
+    return { labels: vals.map((_, i) => `${i + 1}`), values: vals };
+  }, [filteredRows, metricCol, dateCol, numbers]);
+
   const stats = useMemo(() => {
     const { min, max } = minMax(numbers);
     return {
