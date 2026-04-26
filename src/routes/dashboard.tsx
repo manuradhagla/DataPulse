@@ -800,6 +800,53 @@ function DatasetView({
           </div>
         )}
 
+        {/* Histogram — distribution of metric values */}
+        {metricCol && numbers.length > 4 && (
+          <div className="rounded-2xl border border-border bg-gradient-card p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-base font-semibold">
+                Distribution · {metricCol}
+              </h3>
+              <span className="font-mono text-xs text-muted-foreground">
+                {numbers.length} values · 10 bins
+              </span>
+            </div>
+            <Histogram values={numbers} label={metricCol} />
+          </div>
+        )}
+
+        {/* Horizontal bar — sums by group, easier to read long labels */}
+        {metricCol && groupedSums.length > 0 && (
+          <div className="rounded-2xl border border-border bg-gradient-card p-5">
+            <h3 className="mb-4 font-display text-base font-semibold">
+              {metricCol} ranked by {groupCol}
+            </h3>
+            <HorizontalBar
+              labels={groupedSums.map((g) => g.label)}
+              values={groupedSums.map((g) => g.total)}
+              label={metricCol}
+            />
+          </div>
+        )}
+
+        {/* Bubble — three numeric dimensions */}
+        {bubblePoints.length > 1 && (
+          <div className="rounded-2xl border border-border bg-gradient-card p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-base font-semibold">Bubble</h3>
+              <span className="font-mono text-xs text-muted-foreground">
+                {bubblePoints.length} points
+              </span>
+            </div>
+            <BubbleChart
+              points={bubblePoints}
+              xLabel={scatterCol}
+              yLabel={metricCol}
+              sizeLabel={bubbleSizeCol}
+            />
+          </div>
+        )}
+
         {groupCol && groups.length > 0 && (
           <>
             <div className="rounded-2xl border border-border bg-gradient-card p-5">
