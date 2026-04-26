@@ -60,9 +60,7 @@ function Landing() {
       <DashboardPreview />
       <WhyChoose />
       <Testimonials />
-      <Pricing />
       <About />
-      <Contact />
       <Footer />
     </div>
   );
@@ -539,221 +537,6 @@ function Testimonials() {
   );
 }
 
-function Pricing() {
-  const tiers = [
-    {
-      name: "Basic",
-      price: "Free",
-      tagline: "For exploration and personal projects.",
-      features: [
-        "3 datasets",
-        "Up to 10K rows per file",
-        "All chart types",
-        "CSV & JSON",
-      ],
-      cta: "Start free",
-      featured: false,
-    },
-    {
-      name: "Pro",
-      price: "$19",
-      suffix: "/month",
-      tagline: "For analysts and small teams.",
-      features: [
-        "Unlimited datasets",
-        "Up to 1M rows per file",
-        "Activity log & exports",
-        "Priority support",
-      ],
-      cta: "Start Pro trial",
-      featured: true,
-    },
-    {
-      name: "Enterprise",
-      price: "Custom",
-      tagline: "For organisations with audit needs.",
-      features: [
-        "SSO & RBAC",
-        "Audit log retention",
-        "SLA & dedicated support",
-        "Self-hosted option",
-      ],
-      cta: "Contact sales",
-      featured: false,
-    },
-  ];
-  return (
-    <section id="pricing" className="relative scroll-mt-20 py-24 lg:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="text-sm font-medium uppercase tracking-wider text-accent">
-            Pricing
-          </div>
-          <h2 className="mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl text-balance">
-            Simple plans that scale with you.
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Start free, upgrade when your data grows. No credit card required.
-          </p>
-        </div>
-        <div className="mt-16 grid gap-6 lg:grid-cols-3">
-          {tiers.map((t) => (
-            <div
-              key={t.name}
-              className={`relative rounded-2xl border p-7 ${
-                t.featured
-                  ? "border-primary/60 bg-gradient-card shadow-glow"
-                  : "border-border/60 bg-gradient-card"
-              }`}
-            >
-              {t.featured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-                  Most popular
-                </div>
-              )}
-              <h3 className="font-display text-xl font-semibold">{t.name}</h3>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-semibold">{t.price}</span>
-                {t.suffix && (
-                  <span className="text-sm text-muted-foreground">{t.suffix}</span>
-                )}
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">{t.tagline}</p>
-              <ul className="mt-6 space-y-2.5">
-                {t.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button
-                asChild
-                variant={t.featured ? "hero" : "outline"}
-                className="mt-7 w-full"
-              >
-                <Link to="/auth" search={{ mode: "signup" }}>
-                  {t.cta}
-                </Link>
-              </Button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Contact() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim()) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Please enter a valid email");
-      return;
-    }
-    setSending(true);
-    // Open the user's mail client with a prefilled message — no backend required.
-    const body = `Name: ${name}\nEmail: ${email}\n\n${message}`;
-    window.location.href = `mailto:hello@datapulse.app?subject=${encodeURIComponent(
-      `DataPulse inquiry from ${name}`,
-    )}&body=${encodeURIComponent(body)}`;
-    setTimeout(() => {
-      setSending(false);
-      toast.success("Opening your mail client…");
-      setName("");
-      setEmail("");
-      setMessage("");
-    }, 400);
-  };
-
-  return (
-    <section
-      id="contact"
-      className="relative scroll-mt-20 border-t border-border/40 bg-surface/30 py-24 lg:py-32"
-    >
-      <div className="mx-auto grid max-w-6xl gap-12 px-6 lg:grid-cols-2 lg:px-8">
-        <div>
-          <div className="text-sm font-medium uppercase tracking-wider text-accent">
-            Contact
-          </div>
-          <h2 className="mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl text-balance">
-            Talk to the team.
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Questions about deployment, security, or pricing? Send us a note and
-            we'll get back within one business day.
-          </p>
-          <ul className="mt-8 space-y-3 text-sm text-muted-foreground">
-            <li className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-primary" /> hello@datapulse.app
-            </li>
-            <li className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-primary" /> SOC 2 Type II in progress
-            </li>
-            <li className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-primary" /> GDPR compliant data handling
-            </li>
-          </ul>
-        </div>
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-2xl border border-border/60 bg-gradient-card p-7"
-        >
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="contact-name">Name</Label>
-              <Input
-                id="contact-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={100}
-                placeholder="Jane Doe"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="contact-email">Email</Label>
-              <Input
-                id="contact-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                maxLength={200}
-                placeholder="jane@company.com"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="contact-message">Message</Label>
-              <Textarea
-                id="contact-message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                maxLength={1000}
-                rows={5}
-                placeholder="Tell us about your use case…"
-                required
-              />
-            </div>
-            <Button type="submit" variant="hero" className="w-full" disabled={sending}>
-              {sending ? "Opening…" : "Send message"} <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-        </form>
-      </div>
-    </section>
-  );
-}
-
 function Footer() {
   return (
     <footer className="border-t border-border/40 bg-background/60 py-14">
@@ -776,14 +559,12 @@ function Footer() {
             links={[
               { label: "Features", href: "#features" },
               { label: "Preview", href: "#preview" },
-              { label: "Pricing", href: "#pricing" },
             ]}
           />
           <FooterCol
             title="Company"
             links={[
               { label: "About", href: "#about" },
-              { label: "Contact", href: "#contact" },
             ]}
           />
           <div>
