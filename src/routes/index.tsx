@@ -1,34 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
 import {
   Activity,
   ArrowRight,
   BarChart3,
   Brain,
-  Check,
   Clock,
   Database,
-  FileText,
   Github,
   LineChart,
   Linkedin,
   Lock,
-  Mail,
   PieChart,
   Quote,
-  Shield,
   Sparkles,
-  TrendingUp,
   Twitter,
   UploadCloud,
   Users,
   Zap,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Navbar } from "@/components/Navbar";
 
 export const Route = createFileRoute("/")({
