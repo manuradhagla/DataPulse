@@ -827,16 +827,24 @@ function DatasetView({
                   <SelectContent>
                     <SelectItem value="doughnut">Doughnut</SelectItem>
                     <SelectItem value="pie">Pie</SelectItem>
+                    <SelectItem value="polar">Polar area</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              {shareType === "doughnut" ? (
+              {shareType === "doughnut" && (
                 <DoughnutBreakdown
                   labels={groups.map((g) => g.label)}
                   values={groups.map((g) => g.count)}
                 />
-              ) : (
+              )}
+              {shareType === "pie" && (
                 <PieBreakdown
+                  labels={groups.map((g) => g.label)}
+                  values={groups.map((g) => g.count)}
+                />
+              )}
+              {shareType === "polar" && (
+                <PolarBreakdown
                   labels={groups.map((g) => g.label)}
                   values={groups.map((g) => g.count)}
                 />
