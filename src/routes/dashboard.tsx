@@ -46,10 +46,12 @@ import {
   detectOutliers,
   formatNumber,
   growthPercent,
+  isDateColumn,
   isNumericColumn,
   mean,
   median,
   minMax,
+  rowDate,
   toNumberArray,
   valueCounts,
   type Row,
@@ -306,11 +308,18 @@ function DatasetView({
     () => dataset.columns.filter((c) => !isNumericColumn(dataset.rows, c)),
     [dataset],
   );
+  const dateCols = useMemo(
+    () => dataset.columns.filter((c) => isDateColumn(dataset.rows, c)),
+    [dataset],
+  );
 
   const [metricCol, setMetricCol] = useState<string>(numericCols[0] ?? "");
   const [groupCol, setGroupCol] = useState<string>(
     categoricalCols[0] ?? dataset.columns[0] ?? "",
   );
+  const [dateCol, setDateCol] = useState<string>(dateCols[0] ?? "__none");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
   // Variant pickers for the new chart types.
   const [trendType, setTrendType] = useState<"line" | "area" | "radar">("line");
   const [shareType, setShareType] = useState<"doughnut" | "pie">("doughnut");
@@ -320,12 +329,28 @@ function DatasetView({
   useEffect(() => {
     setMetricCol(numericCols[0] ?? "");
     setGroupCol(categoricalCols[0] ?? dataset.columns[0] ?? "");
+    setDateCol(dateCols[0] ?? "__none");
+    setFromDate("");
+    setToDate("");
     setScatterCol("__none");
-  }, [dataset.id, numericCols, categoricalCols, dataset.columns]);
+  }, [dataset.id, numericCols, categoricalCols, dateCols, dataset.columns]);
+
+  // Apply date-range filter (if a date column is chosen) before computing KPIs.
+  const filteredRows = useMemo(() => {
+    if (dateCol === "__none" || (!fromDate && !toDate)) return dataset.rows;
+    const from = fromDate ? new Date(fromDate).getTime() : -Infinity;
+    const to = toDate ? new Date(toDate).getTime() + 86_399_999 : Infinity; // include the end day
+    return dataset.rows.filter((r) => {
+      const d = rowDate(r, dateCol);
+      if (!d) return false;
+      const t = d.getTime();
+      return t >= from && t <= to;
+    });
+  }, [dataset.rows, dateCol, fromDate, toDate]);
 
   const numbers = useMemo(
-    () => (metricCol ? toNumberArray(dataset.rows, metricCol) : []),
-    [dataset.rows, metricCol],
+    () => (metricCol ? toNumberArray(filteredRows, metricCol) : []),
+    [filteredRows, metricCol],
   );
 
   const stats = useMemo(() => {
@@ -341,15 +366,15 @@ function DatasetView({
   }, [numbers]);
 
   const groups = useMemo(
-    () => (groupCol ? valueCounts(dataset.rows, groupCol, 8) : []),
-    [dataset.rows, groupCol],
+    () => (groupCol ? valueCounts(filteredRows, groupCol, 8) : []),
+    [filteredRows, groupCol],
   );
 
   // Sum of `metricCol` per top group → stacked bar / per-group magnitude.
   const groupedSums = useMemo(() => {
     if (!metricCol || !groupCol) return [] as { label: string; total: number }[];
     const sums = new Map<string, number>();
-    for (const row of dataset.rows) {
+    for (const row of filteredRows) {
       const key = row[groupCol];
       if (key === null || key === undefined || key === "") continue;
       const raw = row[metricCol];
@@ -362,19 +387,19 @@ function DatasetView({
       .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
       .slice(0, 8)
       .map(([label, total]) => ({ label, total }));
-  }, [dataset.rows, metricCol, groupCol]);
+  }, [filteredRows, metricCol, groupCol]);
 
   // Scatter points: pair the two chosen numeric columns row-by-row.
   const scatterPoints = useMemo(() => {
     if (!metricCol || scatterCol === "__none" || scatterCol === metricCol) return [];
     const pts: { x: number; y: number }[] = [];
-    for (const r of dataset.rows) {
+    for (const r of filteredRows) {
       const x = Number(r[scatterCol]);
       const y = Number(r[metricCol]);
       if (Number.isFinite(x) && Number.isFinite(y)) pts.push({ x, y });
     }
     return pts.slice(0, 1000); // cap for perf
-  }, [dataset.rows, metricCol, scatterCol]);
+  }, [filteredRows, metricCol, scatterCol]);
 
   const trendLabels = useMemo(
     () => numbers.map((_, i) => `${i + 1}`).slice(-50),
@@ -461,6 +486,78 @@ function DatasetView({
           </Button>
         </div>
       </div>
+
+      {dateCols.length > 0 && (
+        <div className="rounded-2xl border border-border bg-gradient-card p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-display text-sm font-semibold">Date filter</h3>
+              <p className="text-xs text-muted-foreground">
+                Restrict KPIs and charts to a date range.
+              </p>
+            </div>
+            <span className="font-mono text-xs text-muted-foreground">
+              {filteredRows.length} of {dataset.rows.length} rows
+            </span>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Date column
+              </Label>
+              <Select value={dateCol} onValueChange={setDateCol}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">— Off —</SelectItem>
+                  {dateCols.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                From
+              </Label>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                disabled={dateCol === "__none"}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                To
+              </Label>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                disabled={dateCol === "__none"}
+              />
+            </div>
+            <div className="flex items-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFromDate("");
+                  setToDate("");
+                }}
+                disabled={!fromDate && !toDate}
+                className="w-full"
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">

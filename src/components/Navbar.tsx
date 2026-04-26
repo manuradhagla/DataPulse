@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Activity, LogOut, Shield } from "lucide-react";
+import { Activity, FileBarChart, LogOut, Settings as SettingsIcon, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, signOut } from "@/lib/auth";
 import { useIsAdmin } from "@/lib/useRole";
@@ -69,6 +69,16 @@ export function Navbar() {
               )}
               <Button asChild variant="ghost" size="sm">
                 <Link to="/dashboard">Dashboard</Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/reports">
+                  <FileBarChart className="mr-1.5 h-4 w-4" /> Reports
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/settings">
+                  <SettingsIcon className="mr-1.5 h-4 w-4" /> Settings
+                </Link>
               </Button>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="mr-1.5 h-4 w-4" /> Sign out
