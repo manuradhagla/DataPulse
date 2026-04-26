@@ -308,11 +308,18 @@ function DatasetView({
     () => dataset.columns.filter((c) => !isNumericColumn(dataset.rows, c)),
     [dataset],
   );
+  const dateCols = useMemo(
+    () => dataset.columns.filter((c) => isDateColumn(dataset.rows, c)),
+    [dataset],
+  );
 
   const [metricCol, setMetricCol] = useState<string>(numericCols[0] ?? "");
   const [groupCol, setGroupCol] = useState<string>(
     categoricalCols[0] ?? dataset.columns[0] ?? "",
   );
+  const [dateCol, setDateCol] = useState<string>(dateCols[0] ?? "__none");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
   // Variant pickers for the new chart types.
   const [trendType, setTrendType] = useState<"line" | "area" | "radar">("line");
   const [shareType, setShareType] = useState<"doughnut" | "pie">("doughnut");
@@ -322,8 +329,24 @@ function DatasetView({
   useEffect(() => {
     setMetricCol(numericCols[0] ?? "");
     setGroupCol(categoricalCols[0] ?? dataset.columns[0] ?? "");
+    setDateCol(dateCols[0] ?? "__none");
+    setFromDate("");
+    setToDate("");
     setScatterCol("__none");
-  }, [dataset.id, numericCols, categoricalCols, dataset.columns]);
+  }, [dataset.id, numericCols, categoricalCols, dateCols, dataset.columns]);
+
+  // Apply date-range filter (if a date column is chosen) before computing KPIs.
+  const filteredRows = useMemo(() => {
+    if (dateCol === "__none" || (!fromDate && !toDate)) return dataset.rows;
+    const from = fromDate ? new Date(fromDate).getTime() : -Infinity;
+    const to = toDate ? new Date(toDate).getTime() + 86_399_999 : Infinity; // include the end day
+    return dataset.rows.filter((r) => {
+      const d = rowDate(r, dateCol);
+      if (!d) return false;
+      const t = d.getTime();
+      return t >= from && t <= to;
+    });
+  }, [dataset.rows, dateCol, fromDate, toDate]);
 
   const numbers = useMemo(
     () => (metricCol ? toNumberArray(dataset.rows, metricCol) : []),
