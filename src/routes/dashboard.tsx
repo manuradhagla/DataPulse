@@ -430,6 +430,37 @@ function DatasetView({
     return pts.slice(0, 1000); // cap for perf
   }, [filteredRows, metricCol, scatterCol]);
 
+  // Bubble points — needs metric + scatter + size column (3 numeric dims).
+  const bubblePoints = useMemo(() => {
+    if (
+      !metricCol ||
+      scatterCol === "__none" ||
+      bubbleSizeCol === "__none" ||
+      scatterCol === metricCol
+    )
+      return [];
+    const raw: { x: number; y: number; s: number }[] = [];
+    for (const r of filteredRows) {
+      const x = Number(r[scatterCol]);
+      const y = Number(r[metricCol]);
+      const s = Number(r[bubbleSizeCol]);
+      if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(s)) {
+        raw.push({ x, y, s });
+      }
+    }
+    if (raw.length === 0) return [];
+    // Normalize size to a pixel radius range 4–22.
+    const sizes = raw.map((p) => Math.abs(p.s));
+    const sMin = Math.min(...sizes);
+    const sMax = Math.max(...sizes);
+    const span = sMax - sMin || 1;
+    return raw.slice(0, 500).map((p) => ({
+      x: p.x,
+      y: p.y,
+      r: 4 + ((Math.abs(p.s) - sMin) / span) * 18,
+    }));
+  }, [filteredRows, metricCol, scatterCol, bubbleSizeCol]);
+
   const trendLabels = trendSeries.labels;
   const trendValues = trendSeries.values;
 
