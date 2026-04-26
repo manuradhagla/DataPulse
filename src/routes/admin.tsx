@@ -247,8 +247,77 @@ function AdminPage() {
             </table>
           </div>
         </section>
+
+        <section className="mt-10 space-y-3">
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-primary" />
+            <h2 className="font-display text-lg font-semibold">Recent activity</h2>
+            <span className="text-xs text-muted-foreground">(last 100 events)</span>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-border bg-gradient-card">
+            <table className="w-full text-sm">
+              <thead className="bg-surface/60 text-xs uppercase text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium">When</th>
+                  <th className="px-4 py-3 text-left font-medium">User</th>
+                  <th className="px-4 py-3 text-left font-medium">Action</th>
+                  <th className="px-4 py-3 text-left font-medium">Target</th>
+                  <th className="px-4 py-3 text-left font-medium">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activity.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                      No activity recorded yet.
+                    </td>
+                  </tr>
+                ) : (
+                  activity.map((a) => (
+                    <tr key={a.id} className="border-t border-border/60 align-top">
+                      <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                        {new Date(a.created_at).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                        {userEmailById.get(a.user_id) ?? a.user_id.slice(0, 8)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <ActionBadge action={a.action} />
+                      </td>
+                      <td className="px-4 py-3">{a.target_name ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono text-[11px] text-muted-foreground">
+                        {a.details && Object.keys(a.details).length > 0
+                          ? Object.entries(a.details)
+                              .map(([k, v]) => `${k}: ${typeof v === "number" ? Math.round(v * 100) / 100 : String(v)}`)
+                              .join(" · ")
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </main>
     </div>
+  );
+}
+
+// Color-coded badge for the action column so admins can scan event types quickly.
+function ActionBadge({ action }: { action: string }) {
+  const styles: Record<string, string> = {
+    upload: "bg-emerald-500/15 text-emerald-300",
+    delete: "bg-red-500/15 text-red-300",
+    analytics_run: "bg-primary/15 text-primary",
+    download_original: "bg-sky-500/15 text-sky-300",
+    export_report: "bg-amber-500/15 text-amber-300",
+  };
+  const cls = styles[action] ?? "bg-surface-elevated text-muted-foreground";
+  return (
+    <span className={`rounded px-2 py-0.5 font-mono text-[10px] uppercase ${cls}`}>
+      {action.replace("_", " ")}
+    </span>
   );
 }
 
