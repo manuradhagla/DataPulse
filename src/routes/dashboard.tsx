@@ -111,7 +111,10 @@ function Dashboard() {
       rows: (d.rows as unknown as Row[]) ?? [],
     })) as DatasetRow[];
     setDatasets(rows);
-    if (rows.length > 0 && !activeId) setActiveId(rows[0].id);
+    setActiveId((prev) => {
+      if (prev && rows.some((r) => r.id === prev)) return prev;
+      return rows[0]?.id ?? null;
+    });
     setFetching(false);
   };
 
