@@ -349,8 +349,8 @@ function DatasetView({
   }, [dataset.rows, dateCol, fromDate, toDate]);
 
   const numbers = useMemo(
-    () => (metricCol ? toNumberArray(dataset.rows, metricCol) : []),
-    [dataset.rows, metricCol],
+    () => (metricCol ? toNumberArray(filteredRows, metricCol) : []),
+    [filteredRows, metricCol],
   );
 
   const stats = useMemo(() => {
@@ -366,15 +366,15 @@ function DatasetView({
   }, [numbers]);
 
   const groups = useMemo(
-    () => (groupCol ? valueCounts(dataset.rows, groupCol, 8) : []),
-    [dataset.rows, groupCol],
+    () => (groupCol ? valueCounts(filteredRows, groupCol, 8) : []),
+    [filteredRows, groupCol],
   );
 
   // Sum of `metricCol` per top group → stacked bar / per-group magnitude.
   const groupedSums = useMemo(() => {
     if (!metricCol || !groupCol) return [] as { label: string; total: number }[];
     const sums = new Map<string, number>();
-    for (const row of dataset.rows) {
+    for (const row of filteredRows) {
       const key = row[groupCol];
       if (key === null || key === undefined || key === "") continue;
       const raw = row[metricCol];
@@ -387,19 +387,19 @@ function DatasetView({
       .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
       .slice(0, 8)
       .map(([label, total]) => ({ label, total }));
-  }, [dataset.rows, metricCol, groupCol]);
+  }, [filteredRows, metricCol, groupCol]);
 
   // Scatter points: pair the two chosen numeric columns row-by-row.
   const scatterPoints = useMemo(() => {
     if (!metricCol || scatterCol === "__none" || scatterCol === metricCol) return [];
     const pts: { x: number; y: number }[] = [];
-    for (const r of dataset.rows) {
+    for (const r of filteredRows) {
       const x = Number(r[scatterCol]);
       const y = Number(r[metricCol]);
       if (Number.isFinite(x) && Number.isFinite(y)) pts.push({ x, y });
     }
     return pts.slice(0, 1000); // cap for perf
-  }, [dataset.rows, metricCol, scatterCol]);
+  }, [filteredRows, metricCol, scatterCol]);
 
   const trendLabels = useMemo(
     () => numbers.map((_, i) => `${i + 1}`).slice(-50),
