@@ -487,6 +487,78 @@ function DatasetView({
         </div>
       </div>
 
+      {dateCols.length > 0 && (
+        <div className="rounded-2xl border border-border bg-gradient-card p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-display text-sm font-semibold">Date filter</h3>
+              <p className="text-xs text-muted-foreground">
+                Restrict KPIs and charts to a date range.
+              </p>
+            </div>
+            <span className="font-mono text-xs text-muted-foreground">
+              {filteredRows.length} of {dataset.rows.length} rows
+            </span>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Date column
+              </Label>
+              <Select value={dateCol} onValueChange={setDateCol}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">— Off —</SelectItem>
+                  {dateCols.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                From
+              </Label>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                disabled={dateCol === "__none"}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                To
+              </Label>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                disabled={dateCol === "__none"}
+              />
+            </div>
+            <div className="flex items-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFromDate("");
+                  setToDate("");
+                }}
+                disabled={!fromDate && !toDate}
+                className="w-full"
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">
