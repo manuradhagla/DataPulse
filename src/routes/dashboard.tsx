@@ -400,6 +400,15 @@ function DatasetView({
     a.download = `${dataset.name}-report.json`;
     a.click();
     URL.revokeObjectURL(url);
+    // Treat report export as an analytics run for the activity log.
+    void logActivity(userId, "analytics_run", dataset.name, {
+      metric_column: metricCol,
+      group_column: groupCol,
+      mean: stats.mean,
+      median: stats.median,
+      outliers: stats.outliers,
+    });
+    void logActivity(userId, "export_report", dataset.name);
     toast.success("Report exported");
   };
 
@@ -422,6 +431,7 @@ function DatasetView({
     a.target = "_blank";
     a.rel = "noopener";
     a.click();
+    void logActivity(userId, "download_original", dataset.name);
   };
 
   return (
