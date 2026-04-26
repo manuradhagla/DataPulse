@@ -54,6 +54,7 @@ import {
   valueCounts,
   type Row,
 } from "@/lib/analytics";
+import { logActivity } from "@/lib/activityLog";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -129,6 +130,12 @@ function Dashboard() {
     if (error) {
       toast.error(error.message);
       return;
+    }
+    if (user && target) {
+      void logActivity(user.id, "delete", target.name, {
+        rows: target.row_count,
+        file_type: target.file_type,
+      });
     }
     toast.success("Dataset deleted");
     setDatasets((prev) => prev.filter((d) => d.id !== id));
@@ -219,7 +226,7 @@ function Dashboard() {
 
           <section>
             {active ? (
-              <DatasetView dataset={active} onDelete={() => handleDelete(active.id)} />
+              <DatasetView dataset={active} userId={user!.id} onDelete={() => handleDelete(active.id)} />
             ) : (
               <EmptyState onUpload={() => setUploadOpen(true)} />
             )}
@@ -281,9 +288,11 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
 
 function DatasetView({
   dataset,
+  userId,
   onDelete,
 }: {
   dataset: DatasetRow;
+  userId: string;
   onDelete: () => void;
 }) {
   const numericCols = useMemo(
@@ -391,6 +400,15 @@ function DatasetView({
     a.download = `${dataset.name}-report.json`;
     a.click();
     URL.revokeObjectURL(url);
+    // Treat report export as an analytics run for the activity log.
+    void logActivity(userId, "analytics_run", dataset.name, {
+      metric_column: metricCol,
+      group_column: groupCol,
+      mean: stats.mean,
+      median: stats.median,
+      outliers: stats.outliers,
+    });
+    void logActivity(userId, "export_report", dataset.name);
     toast.success("Report exported");
   };
 
@@ -413,6 +431,7 @@ function DatasetView({
     a.target = "_blank";
     a.rel = "noopener";
     a.click();
+    void logActivity(userId, "download_original", dataset.name);
   };
 
   return (
