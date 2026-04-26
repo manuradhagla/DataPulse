@@ -430,11 +430,8 @@ function DatasetView({
     return pts.slice(0, 1000); // cap for perf
   }, [filteredRows, metricCol, scatterCol]);
 
-  const trendLabels = useMemo(
-    () => numbers.map((_, i) => `${i + 1}`).slice(-50),
-    [numbers],
-  );
-  const trendValues = useMemo(() => numbers.slice(-50), [numbers]);
+  const trendLabels = trendSeries.labels;
+  const trendValues = trendSeries.values;
 
   const handleExport = () => {
     const report = {
