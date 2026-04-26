@@ -119,6 +119,33 @@ export function valueCounts(
     .map(([label, count]) => ({ label, count }));
 }
 
+// Detect a likely date column by sampling parseable values
+export function isDateColumn(rows: Row[], column: string): boolean {
+  if (rows.length === 0) return false;
+  const sample = rows.slice(0, Math.min(rows.length, 50));
+  let parsed = 0;
+  let total = 0;
+  for (const r of sample) {
+    const v = r[column];
+    if (v === null || v === undefined || v === "") continue;
+    total++;
+    if (typeof v === "number" && Number.isFinite(v)) continue; // numbers are not dates
+    const s = String(v);
+    // require something that looks like a date (has - or / or year-like 4 digits)
+    if (!/[-/]|\d{4}/.test(s)) continue;
+    const t = Date.parse(s);
+    if (Number.isFinite(t)) parsed++;
+  }
+  return total > 0 && parsed / total >= 0.7;
+}
+
+export function rowDate(row: Row, column: string): Date | null {
+  const v = row[column];
+  if (v === null || v === undefined || v === "") return null;
+  const t = Date.parse(String(v));
+  return Number.isFinite(t) ? new Date(t) : null;
+}
+
 export function formatNumber(n: number): string {
   if (!Number.isFinite(n)) return "—";
   if (Math.abs(n) >= 1_000_000) return (n / 1_000_000).toFixed(2) + "M";
