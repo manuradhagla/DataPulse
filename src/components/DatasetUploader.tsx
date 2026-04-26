@@ -69,17 +69,24 @@ export function DatasetUploader({ userId, onSaved, onCancel }: Props) {
     if (!parsed || !name.trim() || !file) return;
     setSaving(true);
     try {
-      // 1) Back up the original file to private storage so users can re-download it.
-      // Path is scoped under {user_id}/ so RLS lets only the owner (and admins) access it.
+      // 1) Try to back up the original file to private storage (best-effort).
+      // If storage fails (e.g. bucket misconfigured), we still save the parsed dataset
+      // so the user gets their charts — they just won't be able to re-download the original.
       const safeName = file.name.replace(/[^\w.\-]+/g, "_");
       const storagePath = `${userId}/${crypto.randomUUID()}-${safeName}`;
+      let savedStoragePath: string | null = null;
       const { error: uploadErr } = await supabase.storage
         .from("dataset-files")
         .upload(storagePath, file, {
           contentType: file.type || (parsed.fileType === "json" ? "application/json" : "text/csv"),
           upsert: false,
         });
-      if (uploadErr) throw uploadErr;
+      if (uploadErr) {
+        console.warn("Storage backup failed, continuing without it:", uploadErr);
+        toast.warning("Original file backup skipped — charts will still work");
+      } else {
+        savedStoragePath = storagePath;
+      }
 
       // 2) Save the parsed dataset row + storage pointer.
       const { error } = await supabase.from("datasets").insert([
@@ -90,12 +97,13 @@ export function DatasetUploader({ userId, onSaved, onCancel }: Props) {
           columns: parsed.columns,
           rows: parsed.rows as unknown as never,
           row_count: parsed.rows.length,
-          storage_path: storagePath,
+          storage_path: savedStoragePath,
         },
       ]);
       if (error) {
-        // Roll back the orphaned file if the DB insert fails.
-        await supabase.storage.from("dataset-files").remove([storagePath]);
+        if (savedStoragePath) {
+          await supabase.storage.from("dataset-files").remove([savedStoragePath]);
+        }
         throw error;
       }
       // Record the upload in the activity log (best-effort).
