@@ -226,7 +226,7 @@ function Dashboard() {
 
           <section>
             {active ? (
-              <DatasetView dataset={active} onDelete={() => handleDelete(active.id)} />
+              <DatasetView dataset={active} userId={user!.id} onDelete={() => handleDelete(active.id)} />
             ) : (
               <EmptyState onUpload={() => setUploadOpen(true)} />
             )}
@@ -288,9 +288,11 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
 
 function DatasetView({
   dataset,
+  userId,
   onDelete,
 }: {
   dataset: DatasetRow;
+  userId: string;
   onDelete: () => void;
 }) {
   const numericCols = useMemo(
