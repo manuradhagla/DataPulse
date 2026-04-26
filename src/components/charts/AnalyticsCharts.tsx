@@ -12,7 +12,7 @@ import {
   Filler,
   type ChartOptions,
 } from "chart.js";
-import { Bar, Line, Doughnut, Pie, Scatter, Radar } from "react-chartjs-2";
+import { Bar, Line, Doughnut, Pie, Scatter, Radar, Bubble, PolarArea } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
