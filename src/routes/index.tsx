@@ -432,34 +432,323 @@ function About() {
   );
 }
 
+function WhyChoose() {
+  const reasons = [
+    {
+      icon: Zap,
+      title: "Faster than Excel",
+      body: "No formulas, no pivot tables. Drop a file, get KPIs in under a second — even on 10K+ rows.",
+    },
+    {
+      icon: Brain,
+      title: "Smarter than manual reports",
+      body: "Outliers, growth %, and trend lines computed automatically. No more eyeballing spreadsheets.",
+    },
+    {
+      icon: Users,
+      title: "Built for business teams",
+      body: "Product, ops, and finance can self-serve insights without bothering the data team.",
+    },
+    {
+      icon: Clock,
+      title: "Instant — no BI setup",
+      body: "Skip the Tableau license, the Power BI training, the warehouse modeling. Just upload.",
+    },
+  ];
+  return (
+    <section className="relative scroll-mt-20 py-24 lg:py-32">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <div className="text-sm font-medium uppercase tracking-wider text-accent">
+            Why DataPulse
+          </div>
+          <h2 className="mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl text-balance">
+            The fastest path from raw file to real decision.
+          </h2>
+        </div>
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {reasons.map((r) => (
+            <div
+              key={r.title}
+              className="rounded-2xl border border-border/60 bg-gradient-card p-6"
+            >
+              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-accent/15 text-accent">
+                <r.icon className="h-5 w-5" />
+              </div>
+              <h3 className="font-display text-base font-semibold">{r.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{r.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Testimonials() {
+  const items = [
+    {
+      quote:
+        "We replaced a fortnightly Excel ritual with DataPulse. Our ops team now has live KPIs instead of stale snapshots.",
+      name: "Priya R.",
+      role: "Head of Operations, Northbeam Logistics",
+    },
+    {
+      quote:
+        "The outlier detection alone has paid for itself. We caught a billing anomaly in week one that would've taken us a quarter to spot.",
+      name: "Marcus T.",
+      role: "FP&A Lead, Vertex Studios",
+    },
+    {
+      quote:
+        "Finally a tool that doesn't need a six-week onboarding. I dropped a CSV in and had a dashboard before my coffee was cold.",
+      name: "Aisha K.",
+      role: "Product Analyst, Loop Health",
+    },
+  ];
+  return (
+    <section className="relative scroll-mt-20 border-t border-border/40 bg-surface/30 py-24 lg:py-32">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <div className="text-sm font-medium uppercase tracking-wider text-accent">
+            Testimonials
+          </div>
+          <h2 className="mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl text-balance">
+            Teams making faster calls with DataPulse.
+          </h2>
+        </div>
+        <div className="mt-16 grid gap-6 lg:grid-cols-3">
+          {items.map((t) => (
+            <figure
+              key={t.name}
+              className="rounded-2xl border border-border/60 bg-gradient-card p-6"
+            >
+              <Quote className="h-6 w-6 text-primary/70" />
+              <blockquote className="mt-4 text-sm leading-relaxed text-foreground">
+                "{t.quote}"
+              </blockquote>
+              <figcaption className="mt-6 border-t border-border/50 pt-4">
+                <div className="font-display text-sm font-semibold">{t.name}</div>
+                <div className="text-xs text-muted-foreground">{t.role}</div>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Pricing() {
+  const tiers = [
+    {
+      name: "Basic",
+      price: "Free",
+      tagline: "For exploration and personal projects.",
+      features: [
+        "3 datasets",
+        "Up to 10K rows per file",
+        "All chart types",
+        "CSV & JSON",
+      ],
+      cta: "Start free",
+      featured: false,
+    },
+    {
+      name: "Pro",
+      price: "$19",
+      suffix: "/month",
+      tagline: "For analysts and small teams.",
+      features: [
+        "Unlimited datasets",
+        "Up to 1M rows per file",
+        "Activity log & exports",
+        "Priority support",
+      ],
+      cta: "Start Pro trial",
+      featured: true,
+    },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      tagline: "For organisations with audit needs.",
+      features: [
+        "SSO & RBAC",
+        "Audit log retention",
+        "SLA & dedicated support",
+        "Self-hosted option",
+      ],
+      cta: "Contact sales",
+      featured: false,
+    },
+  ];
+  return (
+    <section id="pricing" className="relative scroll-mt-20 py-24 lg:py-32">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <div className="text-sm font-medium uppercase tracking-wider text-accent">
+            Pricing
+          </div>
+          <h2 className="mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl text-balance">
+            Simple plans that scale with you.
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Start free, upgrade when your data grows. No credit card required.
+          </p>
+        </div>
+        <div className="mt-16 grid gap-6 lg:grid-cols-3">
+          {tiers.map((t) => (
+            <div
+              key={t.name}
+              className={`relative rounded-2xl border p-7 ${
+                t.featured
+                  ? "border-primary/60 bg-gradient-card shadow-glow"
+                  : "border-border/60 bg-gradient-card"
+              }`}
+            >
+              {t.featured && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+                  Most popular
+                </div>
+              )}
+              <h3 className="font-display text-xl font-semibold">{t.name}</h3>
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="font-display text-4xl font-semibold">{t.price}</span>
+                {t.suffix && (
+                  <span className="text-sm text-muted-foreground">{t.suffix}</span>
+                )}
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">{t.tagline}</p>
+              <ul className="mt-6 space-y-2.5">
+                {t.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                asChild
+                variant={t.featured ? "hero" : "outline"}
+                className="mt-7 w-full"
+              >
+                <Link to="/auth" search={{ mode: "signup" }}>
+                  {t.cta}
+                </Link>
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Contact() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email");
+      return;
+    }
+    setSending(true);
+    // Open the user's mail client with a prefilled message — no backend required.
+    const body = `Name: ${name}\nEmail: ${email}\n\n${message}`;
+    window.location.href = `mailto:hello@datapulse.app?subject=${encodeURIComponent(
+      `DataPulse inquiry from ${name}`,
+    )}&body=${encodeURIComponent(body)}`;
+    setTimeout(() => {
+      setSending(false);
+      toast.success("Opening your mail client…");
+      setName("");
+      setEmail("");
+      setMessage("");
+    }, 400);
+  };
+
   return (
     <section
       id="contact"
       className="relative scroll-mt-20 border-t border-border/40 bg-surface/30 py-24 lg:py-32"
     >
-      <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
-        <div className="text-sm font-medium uppercase tracking-wider text-accent">
-          Contact
+      <div className="mx-auto grid max-w-6xl gap-12 px-6 lg:grid-cols-2 lg:px-8">
+        <div>
+          <div className="text-sm font-medium uppercase tracking-wider text-accent">
+            Contact
+          </div>
+          <h2 className="mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl text-balance">
+            Talk to the team.
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Questions about deployment, security, or pricing? Send us a note and
+            we'll get back within one business day.
+          </p>
+          <ul className="mt-8 space-y-3 text-sm text-muted-foreground">
+            <li className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-primary" /> hello@datapulse.app
+            </li>
+            <li className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" /> SOC 2 Type II in progress
+            </li>
+            <li className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" /> GDPR compliant data handling
+            </li>
+          </ul>
         </div>
-        <h2 className="mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl text-balance">
-          Ready to see your data clearly?
-        </h2>
-        <p className="mt-4 text-lg text-muted-foreground">
-          Create a free account or get in touch — we read every message.
-        </p>
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button asChild variant="hero" size="xl">
-            <Link to="/auth" search={{ mode: "signup" }}>
-              Create account <ArrowRight className="ml-1 h-5 w-5" />
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="xl">
-            <a href="mailto:hello@datapulse.app">
-              <Mail className="mr-1 h-4 w-4" /> hello@datapulse.app
-            </a>
-          </Button>
-        </div>
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-2xl border border-border/60 bg-gradient-card p-7"
+        >
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="contact-name">Name</Label>
+              <Input
+                id="contact-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={100}
+                placeholder="Jane Doe"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="contact-email">Email</Label>
+              <Input
+                id="contact-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={200}
+                placeholder="jane@company.com"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="contact-message">Message</Label>
+              <Textarea
+                id="contact-message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                maxLength={1000}
+                rows={5}
+                placeholder="Tell us about your use case…"
+                required
+              />
+            </div>
+            <Button type="submit" variant="hero" className="w-full" disabled={sending}>
+              {sending ? "Opening…" : "Send message"} <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        </form>
       </div>
     </section>
   );
@@ -467,24 +756,96 @@ function Contact() {
 
 function Footer() {
   return (
-    <footer className="border-t border-border/40 py-10">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 sm:flex-row lg:px-8">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-primary">
-            <Activity className="h-4 w-4 text-primary-foreground" strokeWidth={2.5} />
+    <footer className="border-t border-border/40 bg-background/60 py-14">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-primary shadow-glow">
+                <Activity className="h-4 w-4 text-primary-foreground" strokeWidth={2.5} />
+              </div>
+              <span className="font-display text-base font-semibold">DataPulse</span>
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Self-serve analytics for any CSV or JSON dataset. Built for teams
+              who need answers, not training.
+            </p>
           </div>
-          <span className="font-display text-sm font-semibold">DataPulse</span>
-          <span className="text-xs text-muted-foreground">© {new Date().getFullYear()}</span>
+          <FooterCol
+            title="Product"
+            links={[
+              { label: "Features", href: "#features" },
+              { label: "Preview", href: "#preview" },
+              { label: "Pricing", href: "#pricing" },
+            ]}
+          />
+          <FooterCol
+            title="Company"
+            links={[
+              { label: "About", href: "#about" },
+              { label: "Contact", href: "#contact" },
+            ]}
+          />
+          <div>
+            <div className="text-sm font-semibold">Get in touch</div>
+            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+              <li>
+                <a
+                  href="mailto:hello@datapulse.app"
+                  className="hover:text-foreground"
+                >
+                  hello@datapulse.app
+                </a>
+              </li>
+              <li>Stockholm · Remote</li>
+            </ul>
+            <div className="mt-5 flex items-center gap-3 text-muted-foreground">
+              <a href="#" aria-label="Twitter" className="hover:text-foreground">
+                <Twitter className="h-4 w-4" />
+              </a>
+              <a href="#" aria-label="GitHub" className="hover:text-foreground">
+                <Github className="h-4 w-4" />
+              </a>
+              <a href="#" aria-label="LinkedIn" className="hover:text-foreground">
+                <Linkedin className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-4 text-muted-foreground">
-          <a href="#" aria-label="Twitter" className="hover:text-foreground">
-            <Twitter className="h-4 w-4" />
-          </a>
-          <a href="#" aria-label="GitHub" className="hover:text-foreground">
-            <Github className="h-4 w-4" />
-          </a>
+        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-border/40 pt-6 sm:flex-row">
+          <span className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} DataPulse. All rights reserved.
+          </span>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <a href="#" className="hover:text-foreground">Privacy</a>
+            <a href="#" className="hover:text-foreground">Terms</a>
+            <a href="#" className="hover:text-foreground">Security</a>
+          </div>
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterCol({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
+  return (
+    <div>
+      <div className="text-sm font-semibold">{title}</div>
+      <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+        {links.map((l) => (
+          <li key={l.label}>
+            <a href={l.href} className="hover:text-foreground">
+              {l.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
