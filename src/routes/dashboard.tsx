@@ -33,9 +33,13 @@ import { DatasetUploader } from "@/components/DatasetUploader";
 import {
   AreaTrend,
   BarBreakdown,
+  BubbleChart,
   DoughnutBreakdown,
+  Histogram,
+  HorizontalBar,
   LineTrend,
   PieBreakdown,
+  PolarBreakdown,
   RadarChart,
   ScatterPlot,
   StackedBars,
