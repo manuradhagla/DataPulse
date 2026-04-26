@@ -12,7 +12,7 @@ import {
   Filler,
   type ChartOptions,
 } from "chart.js";
-import { Bar, Line, Doughnut, Pie, Scatter, Radar } from "react-chartjs-2";
+import { Bar, Line, Doughnut, Pie, Scatter, Radar, Bubble, PolarArea } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
@@ -328,6 +328,167 @@ export function RadarChart({
               borderColor: PALETTE[1],
               borderWidth: 2,
               pointBackgroundColor: PALETTE[1],
+            },
+          ],
+        }}
+      />
+    </div>
+  );
+}
+
+// Horizontal bar — same as BarBreakdown but better for long category labels
+export function HorizontalBar({
+  labels,
+  values,
+  label,
+}: {
+  labels: string[];
+  values: number[];
+  label: string;
+}) {
+  const opts: ChartOptions<"bar"> = {
+    indexAxis: "y",
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: baseOptions.plugins,
+    scales: {
+      x: {
+        ticks: { color: "oklch(0.68 0.025 260)" },
+        grid: { color: "oklch(0.30 0.025 270 / 0.3)" },
+      },
+      y: {
+        ticks: { color: "oklch(0.68 0.025 260)" },
+        grid: { color: "oklch(0.30 0.025 270 / 0.3)" },
+      },
+    },
+  };
+  return (
+    <div className="h-72">
+      <Bar
+        options={opts}
+        data={{
+          labels,
+          datasets: [
+            {
+              label,
+              data: values,
+              backgroundColor: labels.map((_, i) => PALETTE[i % PALETTE.length]),
+              borderRadius: 6,
+            },
+          ],
+        }}
+      />
+    </div>
+  );
+}
+
+// Histogram — distribution of a numeric column into buckets
+export function Histogram({ values, label }: { values: number[]; label: string }) {
+  const buckets = 10;
+  let labels: string[] = [];
+  let counts: number[] = [];
+  if (values.length > 0) {
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const width = (max - min) / buckets || 1;
+    counts = new Array(buckets).fill(0);
+    for (const v of values) {
+      const idx = Math.min(buckets - 1, Math.floor((v - min) / width));
+      counts[idx]++;
+    }
+    labels = counts.map((_, i) => {
+      const lo = min + i * width;
+      const hi = lo + width;
+      const fmt = (n: number) =>
+        Math.abs(n) >= 1000 ? (n / 1000).toFixed(1) + "K" : n.toFixed(1);
+      return `${fmt(lo)}–${fmt(hi)}`;
+    });
+  }
+  return (
+    <div className="h-72">
+      <Bar
+        options={baseOptions as ChartOptions<"bar">}
+        data={{
+          labels,
+          datasets: [
+            {
+              label: `${label} distribution`,
+              data: counts,
+              backgroundColor: PALETTE[3],
+              borderRadius: 4,
+            },
+          ],
+        }}
+      />
+    </div>
+  );
+}
+
+// Bubble — three numeric dimensions: x, y, and size
+export function BubbleChart({
+  points,
+  xLabel,
+  yLabel,
+  sizeLabel,
+}: {
+  points: { x: number; y: number; r: number }[];
+  xLabel: string;
+  yLabel: string;
+  sizeLabel: string;
+}) {
+  const opts: ChartOptions<"bubble"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: baseOptions.plugins,
+    scales: {
+      x: {
+        title: { display: true, text: xLabel, color: "oklch(0.68 0.025 260)" },
+        ticks: { color: "oklch(0.68 0.025 260)" },
+        grid: { color: "oklch(0.30 0.025 270 / 0.3)" },
+      },
+      y: {
+        title: { display: true, text: yLabel, color: "oklch(0.68 0.025 260)" },
+        ticks: { color: "oklch(0.68 0.025 260)" },
+        grid: { color: "oklch(0.30 0.025 270 / 0.3)" },
+      },
+    },
+  };
+  return (
+    <div className="h-72">
+      <Bubble
+        options={opts}
+        data={{
+          datasets: [
+            {
+              label: `${xLabel} × ${yLabel} (size: ${sizeLabel})`,
+              data: points,
+              backgroundColor: "oklch(0.78 0.18 35 / 0.55)",
+              borderColor: PALETTE[3],
+            },
+          ],
+        }}
+      />
+    </div>
+  );
+}
+
+// Polar area — like a pie but with variable radii
+export function PolarBreakdown({ labels, values }: { labels: string[]; values: number[] }) {
+  return (
+    <div className="h-72">
+      <PolarArea
+        options={noScaleOptions as ChartOptions<"polarArea">}
+        data={{
+          labels,
+          datasets: [
+            {
+              data: values,
+              backgroundColor: labels.map(
+                (_, i) =>
+                  PALETTE[i % PALETTE.length].replace(")", " / 0.65)").replace("oklch(", "oklch("),
+              ),
+              borderColor: "oklch(0.16 0.02 270)",
+              borderWidth: 2,
             },
           ],
         }}

@@ -33,9 +33,13 @@ import { DatasetUploader } from "@/components/DatasetUploader";
 import {
   AreaTrend,
   BarBreakdown,
+  BubbleChart,
   DoughnutBreakdown,
+  Histogram,
+  HorizontalBar,
   LineTrend,
   PieBreakdown,
+  PolarBreakdown,
   RadarChart,
   ScatterPlot,
   StackedBars,
@@ -322,9 +326,11 @@ function DatasetView({
   const [toDate, setToDate] = useState<string>("");
   // Variant pickers for the new chart types.
   const [trendType, setTrendType] = useState<"line" | "area" | "radar">("line");
-  const [shareType, setShareType] = useState<"doughnut" | "pie">("doughnut");
+  const [shareType, setShareType] = useState<"doughnut" | "pie" | "polar">("doughnut");
   // Optional second numeric column to enable scatter (correlation) view.
   const [scatterCol, setScatterCol] = useState<string>("__none");
+  // Optional third numeric column for bubble chart sizing.
+  const [bubbleSizeCol, setBubbleSizeCol] = useState<string>("__none");
 
   useEffect(() => {
     setMetricCol(numericCols[0] ?? "");
@@ -333,6 +339,7 @@ function DatasetView({
     setFromDate("");
     setToDate("");
     setScatterCol("__none");
+    setBubbleSizeCol("__none");
   }, [dataset.id, numericCols, categoricalCols, dateCols, dataset.columns]);
 
   // Apply date-range filter (if a date column is chosen) before computing KPIs.
@@ -352,6 +359,28 @@ function DatasetView({
     () => (metricCol ? toNumberArray(filteredRows, metricCol) : []),
     [filteredRows, metricCol],
   );
+
+  // For the trend chart: if a date column is active, sort rows chronologically
+  // so the line reflects real time order rather than upload/insert order.
+  const trendSeries = useMemo(() => {
+    if (!metricCol) return { labels: [] as string[], values: [] as number[] };
+    if (dateCol !== "__none") {
+      const pairs: { t: number; label: string; v: number }[] = [];
+      for (const r of filteredRows) {
+        const d = rowDate(r, dateCol);
+        if (!d) continue;
+        const raw = r[metricCol];
+        const n = typeof raw === "number" ? raw : Number(raw);
+        if (!Number.isFinite(n)) continue;
+        pairs.push({ t: d.getTime(), label: d.toISOString().slice(0, 10), v: n });
+      }
+      pairs.sort((a, b) => a.t - b.t);
+      const last = pairs.slice(-50);
+      return { labels: last.map((p) => p.label), values: last.map((p) => p.v) };
+    }
+    const vals = numbers.slice(-50);
+    return { labels: vals.map((_, i) => `${i + 1}`), values: vals };
+  }, [filteredRows, metricCol, dateCol, numbers]);
 
   const stats = useMemo(() => {
     const { min, max } = minMax(numbers);
@@ -401,11 +430,39 @@ function DatasetView({
     return pts.slice(0, 1000); // cap for perf
   }, [filteredRows, metricCol, scatterCol]);
 
-  const trendLabels = useMemo(
-    () => numbers.map((_, i) => `${i + 1}`).slice(-50),
-    [numbers],
-  );
-  const trendValues = useMemo(() => numbers.slice(-50), [numbers]);
+  // Bubble points — needs metric + scatter + size column (3 numeric dims).
+  const bubblePoints = useMemo(() => {
+    if (
+      !metricCol ||
+      scatterCol === "__none" ||
+      bubbleSizeCol === "__none" ||
+      scatterCol === metricCol
+    )
+      return [];
+    const raw: { x: number; y: number; s: number }[] = [];
+    for (const r of filteredRows) {
+      const x = Number(r[scatterCol]);
+      const y = Number(r[metricCol]);
+      const s = Number(r[bubbleSizeCol]);
+      if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(s)) {
+        raw.push({ x, y, s });
+      }
+    }
+    if (raw.length === 0) return [];
+    // Normalize size to a pixel radius range 4–22.
+    const sizes = raw.map((p) => Math.abs(p.s));
+    const sMin = Math.min(...sizes);
+    const sMax = Math.max(...sizes);
+    const span = sMax - sMin || 1;
+    return raw.slice(0, 500).map((p) => ({
+      x: p.x,
+      y: p.y,
+      r: 4 + ((Math.abs(p.s) - sMin) / span) * 18,
+    }));
+  }, [filteredRows, metricCol, scatterCol, bubbleSizeCol]);
+
+  const trendLabels = trendSeries.labels;
+  const trendValues = trendSeries.values;
 
   const handleExport = () => {
     const report = {
@@ -635,6 +692,26 @@ function DatasetView({
             </SelectContent>
           </Select>
         </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Bubble size column
+          </Label>
+          <Select value={bubbleSizeCol} onValueChange={setBubbleSizeCol}>
+            <SelectTrigger>
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">None</SelectItem>
+              {numericCols
+                .filter((c) => c !== metricCol && c !== scatterCol)
+                .map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {metricCol ? (
@@ -723,6 +800,53 @@ function DatasetView({
           </div>
         )}
 
+        {/* Histogram — distribution of metric values */}
+        {metricCol && numbers.length > 4 && (
+          <div className="rounded-2xl border border-border bg-gradient-card p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-base font-semibold">
+                Distribution · {metricCol}
+              </h3>
+              <span className="font-mono text-xs text-muted-foreground">
+                {numbers.length} values · 10 bins
+              </span>
+            </div>
+            <Histogram values={numbers} label={metricCol} />
+          </div>
+        )}
+
+        {/* Horizontal bar — sums by group, easier to read long labels */}
+        {metricCol && groupedSums.length > 0 && (
+          <div className="rounded-2xl border border-border bg-gradient-card p-5">
+            <h3 className="mb-4 font-display text-base font-semibold">
+              {metricCol} ranked by {groupCol}
+            </h3>
+            <HorizontalBar
+              labels={groupedSums.map((g) => g.label)}
+              values={groupedSums.map((g) => g.total)}
+              label={metricCol}
+            />
+          </div>
+        )}
+
+        {/* Bubble — three numeric dimensions */}
+        {bubblePoints.length > 1 && (
+          <div className="rounded-2xl border border-border bg-gradient-card p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-base font-semibold">Bubble</h3>
+              <span className="font-mono text-xs text-muted-foreground">
+                {bubblePoints.length} points
+              </span>
+            </div>
+            <BubbleChart
+              points={bubblePoints}
+              xLabel={scatterCol}
+              yLabel={metricCol}
+              sizeLabel={bubbleSizeCol}
+            />
+          </div>
+        )}
+
         {groupCol && groups.length > 0 && (
           <>
             <div className="rounded-2xl border border-border bg-gradient-card p-5">
@@ -750,16 +874,24 @@ function DatasetView({
                   <SelectContent>
                     <SelectItem value="doughnut">Doughnut</SelectItem>
                     <SelectItem value="pie">Pie</SelectItem>
+                    <SelectItem value="polar">Polar area</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              {shareType === "doughnut" ? (
+              {shareType === "doughnut" && (
                 <DoughnutBreakdown
                   labels={groups.map((g) => g.label)}
                   values={groups.map((g) => g.count)}
                 />
-              ) : (
+              )}
+              {shareType === "pie" && (
                 <PieBreakdown
+                  labels={groups.map((g) => g.label)}
+                  values={groups.map((g) => g.count)}
+                />
+              )}
+              {shareType === "polar" && (
+                <PolarBreakdown
                   labels={groups.map((g) => g.label)}
                   values={groups.map((g) => g.count)}
                 />
