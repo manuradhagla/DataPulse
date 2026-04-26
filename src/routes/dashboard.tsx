@@ -54,6 +54,7 @@ import {
   valueCounts,
   type Row,
 } from "@/lib/analytics";
+import { logActivity } from "@/lib/activityLog";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -129,6 +130,12 @@ function Dashboard() {
     if (error) {
       toast.error(error.message);
       return;
+    }
+    if (user && target) {
+      void logActivity(user.id, "delete", target.name, {
+        rows: target.row_count,
+        file_type: target.file_type,
+      });
     }
     toast.success("Dataset deleted");
     setDatasets((prev) => prev.filter((d) => d.id !== id));

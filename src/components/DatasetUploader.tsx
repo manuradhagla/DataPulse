@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { parseFile, type ParsedDataset } from "@/lib/parseFile";
 import { supabase } from "@/integrations/supabase/client";
+import { logActivity } from "@/lib/activityLog";
 
 type Props = {
   userId: string;
@@ -97,6 +98,12 @@ export function DatasetUploader({ userId, onSaved, onCancel }: Props) {
         await supabase.storage.from("dataset-files").remove([storagePath]);
         throw error;
       }
+      // Record the upload in the activity log (best-effort).
+      void logActivity(userId, "upload", name.trim(), {
+        rows: parsed.rows.length,
+        columns: parsed.columns.length,
+        file_type: parsed.fileType,
+      });
       toast.success("Dataset saved");
       onSaved();
     } catch (err) {
