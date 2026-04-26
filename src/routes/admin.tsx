@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Shield, Database, Users } from "lucide-react";
+import { Loader2, Shield, Database, Users, Activity } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +34,15 @@ type Profile = {
   created_at: string;
 };
 
+type ActivityEntry = {
+  id: string;
+  user_id: string;
+  action: string;
+  target_name: string | null;
+  details: Record<string, unknown> | null;
+  created_at: string;
+};
+
 function AdminPage() {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useIsAdmin();
@@ -41,6 +50,7 @@ function AdminPage() {
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [datasets, setDatasets] = useState<AdminDataset[]>([]);
+  const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [fetching, setFetching] = useState(true);
   const [search, setSearch] = useState("");
 
@@ -60,19 +70,26 @@ function AdminPage() {
     let cancelled = false;
     (async () => {
       setFetching(true);
-      const [{ data: profileData }, { data: datasetData }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("id, email, display_name, created_at")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("datasets")
-          .select("id, name, file_type, row_count, created_at, user_id")
-          .order("created_at", { ascending: false }),
-      ]);
+      const [{ data: profileData }, { data: datasetData }, { data: activityData }] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id, email, display_name, created_at")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("datasets")
+            .select("id, name, file_type, row_count, created_at, user_id")
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("activity_logs")
+            .select("id, user_id, action, target_name, details, created_at")
+            .order("created_at", { ascending: false })
+            .limit(100),
+        ]);
       if (cancelled) return;
       setProfiles((profileData ?? []) as Profile[]);
       setDatasets((datasetData ?? []) as AdminDataset[]);
+      setActivity((activityData ?? []) as ActivityEntry[]);
       setFetching(false);
     })();
     return () => {
