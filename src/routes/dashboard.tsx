@@ -692,6 +692,26 @@ function DatasetView({
             </SelectContent>
           </Select>
         </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Bubble size column
+          </Label>
+          <Select value={bubbleSizeCol} onValueChange={setBubbleSizeCol}>
+            <SelectTrigger>
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">None</SelectItem>
+              {numericCols
+                .filter((c) => c !== metricCol && c !== scatterCol)
+                .map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {metricCol ? (
